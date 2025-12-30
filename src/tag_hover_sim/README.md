@@ -4,7 +4,7 @@ Simulation integration package for AprilTag hover/yaw-search stack in Gazebo Har
 
 ## Overview
 
-This package mirrors the real Raspberry Pi 5 + Pixhawk drone stack (documented in `docs/DRONE_FLIGHT_STACK_REAL.md`) in a Gazebo Harmonic simulation environment with ArduPilot SITL.
+This package mirrors the real Raspberry Pi 5 + Pixhawk drone stack (see `docs/DRONE_FLIGHT_STACK_REAL.md`) in a Gazebo Harmonic simulation environment with ArduPilot SITL.
 
 Design principle: EXACT sim-to-real parity. The `sim_lockon_backbone.launch.py` file launches ONLY MAVROS + controller, just like the real hardware `lockon_backbone.launch.py`. Camera bridge, AprilTag detector, and PnP TF broadcaster are run in separate terminals in both environments.
 
@@ -30,7 +30,7 @@ Camera node (V4L2 on real; Gazebo bridge in sim)
 - `ros_gz_bridge` package
 - `apriltag_ros` package
 - `mavros` package
-- `tag_hover_controller` package (from real drone workspace)
+- `tag_hover_sim` (this package) on the Pi for controller + PnP broadcaster
 
 Install missing dependencies:
 
@@ -41,7 +41,7 @@ sudo apt install ros-jazzy-ros-gz-bridge ros-jazzy-mavros ros-jazzy-mavros-extra
 ## Build
 
 ```bash
-cd ~/ros2_ws
+cd ~/harmonic_ws
 source /opt/ros/jazzy/setup.bash
 colcon build --packages-select tag_hover_sim --symlink-install
 source install/setup.bash
@@ -56,7 +56,7 @@ gz sim drone_apriltag_world.sdf
 
 2) **Camera Bridge** (SIM ONLY; replaces v4l2_camera_node from hardware)
 ```bash
-source ~/ros2_ws/install/setup.bash
+source ~/harmonic_ws/install/setup.bash
 ros2 run ros_gz_bridge parameter_bridge \
   /camera@sensor_msgs/msg/Image@gz.msgs.Image \
   /camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo \
@@ -80,7 +80,7 @@ ros2 run ros_gz_bridge parameter_bridge \
 ```bash
 ros2 run apriltag_ros apriltag_node \
   --ros-args -p image_rect:=/image_raw -p camera_info:=/camera_info \
-  --params-file ~/ros2_ws/src/tag_hover_sim/config/apriltag_params.yaml
+  --params-file ~/harmonic_ws/src/tag_hover_sim/config/apriltag_params.yaml
 ```
 
 4) **PnP TF Broadcaster** (IDENTICAL)
@@ -97,7 +97,7 @@ cd ~/ardupilot/ArduCopter
 6) **MAVROS + Controller** (IDENTICAL structure)
 ```bash
 source /opt/ros/jazzy/setup.bash
-source ~/ros2_ws/install/setup.bash
+source ~/harmonic_ws/install/setup.bash
 ros2 launch tag_hover_sim sim_lockon_backbone.launch.py mode:=SEARCH
 ```
 

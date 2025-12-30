@@ -23,7 +23,7 @@ takeoff 2
 ### Terminal 3: ROS 2 Stack
 ```bash
 source /opt/ros/jazzy/setup.bash
-source ~/ros2_ws/install/setup.bash
+source ~/harmonic_ws/install/setup.bash
 
 # SEARCH mode (default)
 ros2 launch tag_hover_sim sim_lockon_backbone.launch.py
@@ -75,7 +75,7 @@ gz sim drone_apriltag_world.sdf
 - Drone rotates continuously looking for tag
 ### Terminal 2: Camera Bridge (SIM ONLY - replaces Intel RealSense D455 v4l2 camera node)
 ```bash
-source ~/ros2_ws/install/setup.bash
+source ~/harmonic_ws/install/setup.bash
 # CRITICAL: Gazebo SDF camera MUST be 1280×720 @ 30 FPS to match hardware
 ros2 run ros_gz_bridge parameter_bridge /camera@sensor_msgs/msg/Image@gz.msgs.Image \
   --ros-args -r /camera:=/image_raw
@@ -84,10 +84,10 @@ ros2 run ros_gz_bridge parameter_bridge /camera_info@sensor_msgs/msg/CameraInfo@
 - No dependency on TF
 ### Terminal 3: AprilTag Detector (IDENTICAL to real hardware)
 ```bash
-source ~/ros2_ws/install/setup.bash
+source ~/harmonic_ws/install/setup.bash
 ros2 run apriltag_ros apriltag_node \
 	--ros-args -p image_rect:=/image_raw -p camera_info:=/camera_info \
-	--params-file ~/ros2_ws/src/tag_hover_sim/config/apriltag_params.yaml
+	--params-file ~/harmonic_ws/src/tag_hover_sim/config/apriltag_params.yaml
 ```
 
 ### Terminal 4: PnP TF Broadcaster (IDENTICAL to real hardware)
@@ -111,7 +111,7 @@ takeoff 2
 - Yaw error = `atan2(tag_x, tag_z)` (angular offset in camera frame)
 ### Terminal 6: MAVROS + Controller (IDENTICAL structure to real hardware)
 ```bash
-source ~/ros2_ws/install/setup.bash
+source ~/harmonic_ws/install/setup.bash
 - Controller applies P gain: `yaw_cmd = lock_k_yaw * yaw_error`
 # SEARCH mode (default)
 ros2 launch tag_hover_sim sim_lockon_backbone.launch.py

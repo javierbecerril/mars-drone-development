@@ -7,7 +7,7 @@ A complete ROS 2 package (`tag_hover_sim`) that integrates the real drone AprilT
 ### Package Structure
 
 ```
-ros2_ws/src/tag_hover_sim/
+harmonic_ws/src/tag_hover_sim/
 ├── package.xml                          # ROS 2 package manifest with all dependencies
 ├── setup.py                             # Python package configuration
 ├── setup.cfg                            # Setup configuration
@@ -116,7 +116,7 @@ Added comprehensive sections:
 ### 1. Build the package
 
 ```bash
-cd ~/ros2_ws
+cd ~/harmonic_ws
 source /opt/ros/jazzy/setup.bash
 colcon build --packages-select tag_hover_sim --symlink-install
 source install/setup.bash
@@ -188,15 +188,15 @@ After launch:
 
 ## Files Created
 
-- `ros2_ws/src/tag_hover_sim/package.xml`
-- `ros2_ws/src/tag_hover_sim/setup.py`
-- `ros2_ws/src/tag_hover_sim/setup.cfg`
-- `ros2_ws/src/tag_hover_sim/README.md`
-- `ros2_ws/src/tag_hover_sim/QUICK_REFERENCE.md`
-- `ros2_ws/src/tag_hover_sim/resource/tag_hover_sim`
-- `ros2_ws/src/tag_hover_sim/tag_hover_sim/__init__.py`
-- `ros2_ws/src/tag_hover_sim/config/apriltag_params.yaml`
-- `ros2_ws/src/tag_hover_sim/launch/sim_lockon_backbone.launch.py`
+- `harmonic_ws/src/tag_hover_sim/package.xml`
+- `harmonic_ws/src/tag_hover_sim/setup.py`
+- `harmonic_ws/src/tag_hover_sim/setup.cfg`
+- `harmonic_ws/src/tag_hover_sim/README.md`
+- `harmonic_ws/src/tag_hover_sim/QUICK_REFERENCE.md`
+- `harmonic_ws/src/tag_hover_sim/resource/tag_hover_sim`
+- `harmonic_ws/src/tag_hover_sim/tag_hover_sim/__init__.py`
+- `harmonic_ws/src/tag_hover_sim/config/apriltag_params.yaml`
+- `harmonic_ws/src/tag_hover_sim/launch/sim_lockon_backbone.launch.py`
 - This summary file
 
 ---

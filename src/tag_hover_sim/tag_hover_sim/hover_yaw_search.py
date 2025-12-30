@@ -37,6 +37,7 @@ class HoverYawSearch(Node):
         self.declare_parameter('camera_frame', 'camera')
         self.declare_parameter('tag_frame', 'tag36h11:0')
         self.declare_parameter('max_yaw_rate', 0.6)         # rad/s clamp
+        self.declare_parameter('mavros_wait_timeout', 10.0)  # seconds to wait for MAVROS
 
         self.mode = self.get_parameter('mode').get_parameter_value().string_value
         self.rate_hz = self.get_parameter('rate_hz').get_parameter_value().double_value
@@ -45,10 +46,13 @@ class HoverYawSearch(Node):
         self.camera_frame = self.get_parameter('camera_frame').get_parameter_value().string_value
         self.tag_frame = self.get_parameter('tag_frame').get_parameter_value().string_value
         self.max_yaw_rate = self.get_parameter('max_yaw_rate').get_parameter_value().double_value
+        self.mavros_wait_timeout = self.get_parameter('mavros_wait_timeout').get_parameter_value().double_value
 
         # State from MAVROS
         self._state: State | None = None
         self._have_state = False
+        self._startup_time = rclpy.clock.Clock().now()
+        self._mavros_ready_logged = False
 
         self._state_sub = self.create_subscription(
             State,
@@ -94,14 +98,26 @@ class HoverYawSearch(Node):
     # ------------------------- Core loop -------------------------
 
     def _on_timer(self):
-        # 1) Basic safety: ensure MAVROS is giving us state
+        # 1) Wait for MAVROS to initialize
         if not self._have_state or self._state is None:
-            self.get_logger().warn('No /mavros/state received yet.', throttle_duration_sec=2.0)
-            return
-
+            elapsed = (rclpy.clock.Clock().now() - self._startup_time).nanoseconds / 1e9
+            if not self._mavros_ready_logged and elapsed < self.mavros_wait_timeout:
+                self.get_logger().info(f'Waiting for MAVROS initialization... ({elapsed:.1f}s/{self.mavros_wait_timeout:.1f}s)')
+                return
+            elif elapsed >= self.mavros_wait_timeout:
+                self.get_logger().error(f'MAVROS did not initialize within {self.mavros_wait_timeout}s timeout')
+                return
+            else:
+                self._mavros_ready_logged = True
+                self.get_logger().info(f'MAVROS state received after {elapsed:.1f}s')
+        
         if not self._state.connected:
             self.get_logger().warn('MAVROS connected: False', throttle_duration_sec=2.0)
             return
+        
+        if not self._mavros_ready_logged:
+            self._mavros_ready_logged = True
+            self.get_logger().info('MAVROS connected and ready')
 
         # For now, we only *test* in GUIDED/LOITER/GUIDED_NOGPS
         mode = self._state.mode.upper() if self._state.mode else ''

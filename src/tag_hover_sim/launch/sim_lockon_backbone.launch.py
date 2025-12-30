@@ -46,10 +46,13 @@ def generate_launch_description():
     output='screen',
     parameters=[
       {'mode': LaunchConfiguration('mode')},
-      {'search_yaw_rate': 0.25},          # spin speed in SEARCH mode
-      {'image_width': 1280},              # MUST match your camera width
-      {'lock_kp': 0.0025},                # tuning gain
-      {'lock_deadband_px': 10.0},         # ignore tiny pixel errors
+      {'rate_hz': 20.0},                   # control loop rate
+      {'search_yaw': 0.25},                # spin speed in SEARCH mode (rad/s)
+      {'lock_k_yaw': 0.0025},              # P gain for yaw lock
+      {'camera_frame': 'camera'},          # camera frame name
+      {'tag_frame': 'tag36h11:0'},         # tag frame name
+      {'max_yaw_rate': 0.6},               # max yaw rate (rad/s)
+      {'mavros_wait_timeout': 10.0},       # wait up to 10s for MAVROS
       {'use_sim_time': True}
     ]
   )

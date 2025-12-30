@@ -16,8 +16,7 @@ from launch.substitutions import LaunchConfiguration
 def generate_launch_description():
   fcu_url_arg = DeclareLaunchArgument(
     'fcu_url',
-    #default_value='udp://:14540@127.0.0.1:14550', #This section is different from hardware because serial is hardware only, udp is simulation only
-    default_value='udp://127.0.0.1:14550@',
+    default_value='udp://:14555@127.0.0.1:14550',
     description='MAVROS FCU URL (sim: UDP to SITL; real: serial:///dev/ttyAMA0:57600)'
   )
 

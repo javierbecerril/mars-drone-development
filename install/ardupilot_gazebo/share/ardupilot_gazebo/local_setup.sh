@@ -1,0 +1,1 @@
+/home/javierbecerril/harmonic_ws/build/ardupilot_gazebo/ament_cmake_environment_hooks/local_setup.sh

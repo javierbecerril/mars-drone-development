@@ -1,0 +1,2 @@
+[console_scripts]
+hover_yaw_search = tag_hover_sim.hover_yaw_search:main

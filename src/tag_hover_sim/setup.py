@@ -28,7 +28,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'hover_yaw_search = tag_hover_sim.hover_yaw_search:main'
+            'hover_yaw_search = tag_hover_sim.hover_yaw_search:main',
+            'apriltag_tf_broadcaster = tag_hover_sim.apriltag_tf_broadcaster:main',
+            'apriltag_pnp_broadcaster = tag_hover_sim.apriltag_pnp_broadcaster:main'
         ],
     },
 )

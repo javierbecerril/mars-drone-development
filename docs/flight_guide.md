@@ -28,9 +28,9 @@ gz sim -r src/tag_hover_sim/worlds/apriltag_test.sdf
 ```bash
 ros2 launch mavros apm.launch fcu_url:=udp://:14555@127.0.0.1:14550
 ```
-4) Start controller (if using lockon):
+4) Start controller (lockon):
 ```bash
-ros2 launch tag_hover_sim sim_lockon_backbone.launch.py fcu_url:=udp://:14555@127.0.0.1:14550
+ros2 run tag_hover_sim hover_yaw_search --ros-args -p mavros_prefix:=/mavros -p mode:=SEARCH
 ```
 5) Start camera bridge + apriltag_ros + PnP TF (see `LOCKON_NOTES.md` for exact commands).
 
@@ -39,6 +39,13 @@ ros2 launch tag_hover_sim sim_lockon_backbone.launch.py fcu_url:=udp://:14555@12
 ros2 topic echo /mavros/state --once
 ```
 Look for `connected: true`. Set mode (GUIDED/LOITER), arm, take off (via MAVProxy or a service call).
+
+Service call examples:
+```bash
+ros2 service call /mavros/set_mode mavros_msgs/srv/SetMode "{base_mode: 0, custom_mode: 'GUIDED'}"
+ros2 service call /mavros/cmd/arming mavros_msgs/srv/CommandBool "{value: true}"
+ros2 service call /mavros/cmd/takeoff mavros_msgs/srv/CommandTOL "{min_pitch: 0.0, yaw: 0.0, latitude: 0.0, longitude: 0.0, altitude: 5.0}"
+```
 
 ## Common warnings
 - `AUTOPILOT_VERSION`/time jump warnings: typically benign; wait a few seconds after startup.

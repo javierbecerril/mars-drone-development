@@ -2,6 +2,9 @@
 
 ## Worlds and Models
 - `src/tag_hover_sim/worlds/apriltag_test.sdf` includes `model://iris_with_ardupilot` (patched with fully scoped names) and an AprilTag board.
+- Added `model://apriltag_36h11_0` (textured plane) for reliable detection by `apriltag_ros`.
+  - Place the image file at: `src/tag_hover_sim/models/apriltag_36h11_0/materials/textures/tag36h11_0.png` (36h11, id=0).
+  - Ensure `GZ_SIM_RESOURCE_PATH` includes `src/tag_hover_sim/models` so the texture resolves.
 - `src/tag_hover_sim/models/iris_with_ardupilot` includes `iris_with_standoffs` and references links/joints as `iris_with_ardupilot::iris_with_standoffs::rotor_*` plus the IMU.
 - `src/tag_hover_sim/models/iris_with_rgb_camera` adds a fixed gimbal by including `gimbal_small_3d_fixed`, attaching it via `gimbal_mount` to the base, and orienting it forward.
 
@@ -13,7 +16,16 @@
 - Ensure `GZ_SIM_RESOURCE_PATH` includes the model roots when launching Gazebo: `src/ardupilot_gazebo/models` and `src/tag_hover_sim/models`.
 
 ## AprilTag + Camera
-- Bridge the Gazebo camera to ROS 2 using `ros_gz_bridge` (parameter_bridge), remapping the Gazebo topics to `/camera/image_raw` and `/camera/camera_info`.
+- Bridge the Gazebo camera to ROS 2 using `ros_gz_bridge` (parameter_bridge). **Use the scoped path with remapping** (simple bridge doesn't work):
+  ```bash
+  ros2 run ros_gz_bridge parameter_bridge \
+    /world/apriltag_test/model/iris_with_rgb_camera/model/gimbal/link/pitch_link/sensor/camera/image@sensor_msgs/msg/Image@gz.msgs.Image \
+    /world/apriltag_test/model/iris_with_rgb_camera/model/gimbal/link/pitch_link/sensor/camera/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo \
+    --ros-args \
+    -r /world/apriltag_test/model/iris_with_rgb_camera/model/gimbal/link/pitch_link/sensor/camera/image:=/camera/image_raw \
+    -r /world/apriltag_test/model/iris_with_rgb_camera/model/gimbal/link/pitch_link/sensor/camera/camera_info:=/camera/camera_info
+  ```
+  Verify with: `ros2 topic hz /camera/image_raw` (should show ~6-7 Hz).
 - Run `apriltag_ros` with `src/tag_hover_sim/config/apriltag_params.yaml`, remapping `image` and `camera_info` to the bridged topics.
 
 ## Controller (`hover_yaw_search`)
@@ -25,17 +37,76 @@
 - Requires MAVROS connected and FCU mode GUIDED/LOITER/GUIDED_NOGPS.
 
 ## MAVROS Launch
-- `src/tag_hover_sim/launch/sim_lockon_backbone.launch.py` starts both MAVROS (`mavros_node`) and `hover_yaw_search`.
-- Avoid running a second MAVROS in the same ROS domain. If you need to, give it a unique `__node` and `namespace`, or disable MAVROS in the launch.
-- Typical ArduPilot SITL ports: listen 14555, send 14550; use `fcu_url:=udp://:14555@127.0.0.1:14550` (adjust to your setup).
+Two patterns are supported:
+
+1) Split (recommended while debugging)
+   - Start MAVROS via its own launch:
+     ```bash
+     ros2 launch mavros apm.launch fcu_url:=udp://:14555@127.0.0.1:14550
+     ```
+   - Start controller separately, pointing at MAVROS topics:
+     ```bash
+     ros2 run tag_hover_sim hover_yaw_search --ros-args \
+       -p mavros_prefix:=/mavros \
+       -p mode:=SEARCH \
+       -p rate_hz:=20.0 \
+       -p search_yaw:=0.25 \
+       -p lock_k_yaw:=0.0025 \
+       -p max_yaw_rate:=0.6 \
+       -p mavros_wait_timeout:=10.0
+     ```
+
+2) Combined (MAVROS + controller in one):
+   - `src/tag_hover_sim/launch/sim_lockon_backbone.launch.py` starts both MAVROS (`mavros_node`) and `hover_yaw_search`.
+   - Example:
+     ```bash
+     ros2 launch tag_hover_sim sim_lockon_backbone.launch.py fcu_url:=udp://:14555@127.0.0.1:14550
+     ```
+
+Avoid running a second MAVROS in the same ROS domain. If you need to, give it a unique `__node` and `namespace`. Typical ArduPilot SITL ports: listen 14555, send 14550; use `fcu_url:=udp://:14555@127.0.0.1:14550`.
 
 ## Common Issues
-- MAVROS crash “existing topic name … incompatible type”: happens if multiple MAVROS instances share the same name/namespace/domain. Kill stale `mavros_node` and relaunch with unique name/ns or a fresh ROS domain.
+- MAVROS crash “existing topic name … incompatible type”: typically caused by duplicate names/namespaces (or double-prefix remaps) leading to the same topic being created twice with different types. Fix: kill stale `mavros_node`, ensure a single instance, and avoid double-prefixing (__ns plus manual remaps).
 - Time jump warnings: benign; set `use_sim_time:=true` if using `/clock`.
 
+## MAVROS allocator crash (invalid allocator at subscription.c:261)
+- Likely trigger: a prior error (`create_subscription() called for existing topic ... incompatible type`) due to duplicate topics; allocator error follows when internal state is corrupted.
+- Fix steps:
+  1) Ensure SITL sends MAVLink to MAVROS (`--out=127.0.0.1:14550`).
+  2) Launch a single MAVROS with correct `fcu_url:=udp://:14555@127.0.0.1:14550`.
+  3) Use either namespace OR a custom node/topic prefix, but not both in a way that doubles paths.
+  4) Verify `/mavros/state` shows `connected: true` before arming.
+
 ## Launch Sequence (working)
-1) Start SITL (set `--out` ports, e.g., 14550/14555).
-2) Launch `sim_lockon_backbone.launch.py` with correct `fcu_url` (and unique MAVROS name/ns if needed).
-3) Start the camera bridge to `/camera/image_raw` + `/camera/camera_info`.
-4) Run `apriltag_ros` with `apriltag_params.yaml`.
-5) Verify `/mavros/state` is connected; arm and set GUIDED/LOITER; SEARCH mode will rotate until a tag is seen.
+1) Start SITL (set `--out` ports, e.g., 14550/14555):
+   ```bash
+   cd ~/harmonic_ws/src/ardupilot
+   source ../../drone-venv/bin/activate
+   ./Tools/autotest/sim_vehicle.py -v ArduCopter -f gazebo-iris --model JSON --out=127.0.0.1:14550 --out=127.0.0.1:14555
+   ```
+2) Launch Gazebo world (with ROS env sourced):
+   ```bash
+   gz sim -r src/tag_hover_sim/worlds/apriltag_test.sdf
+   ```
+3) Start the camera bridge (full scoped path with remapping):
+   ```bash
+   ros2 run ros_gz_bridge parameter_bridge \
+     /world/apriltag_test/model/iris_with_rgb_camera/model/gimbal/link/pitch_link/sensor/camera/image@sensor_msgs/msg/Image@gz.msgs.Image \
+     /world/apriltag_test/model/iris_with_rgb_camera/model/gimbal/link/pitch_link/sensor/camera/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo \
+     --ros-args \
+     -r /world/apriltag_test/model/iris_with_rgb_camera/model/gimbal/link/pitch_link/sensor/camera/image:=/camera/image_raw \
+     -r /world/apriltag_test/model/iris_with_rgb_camera/model/gimbal/link/pitch_link/sensor/camera/camera_info:=/camera/camera_info
+   ```
+4) Choose one:
+   - Split launch:
+     ```bash
+     ros2 launch mavros apm.launch fcu_url:=udp://:14555@127.0.0.1:14550
+     ros2 run tag_hover_sim hover_yaw_search --ros-args -p mavros_prefix:=/mavros -p mode:=SEARCH
+     ```
+   - Combined launch:
+     ```bash
+     ros2 launch tag_hover_sim sim_lockon_backbone.launch.py fcu_url:=udp://:14555@127.0.0.1:14550
+     ```
+5) Run `apriltag_ros` with `apriltag_params.yaml`.
+6) Run AprilTag TF broadcaster and PnP broadcaster.
+7) Verify `/mavros/state` is connected; set `GUIDED` and arm; SEARCH rotates until a tag is seen. Switch controller to `LOCK` when tag visible for yaw centering.

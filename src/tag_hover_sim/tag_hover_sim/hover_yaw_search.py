@@ -38,6 +38,7 @@ class HoverYawSearch(Node):
         self.declare_parameter('tag_frame', 'tag36h11:0')
         self.declare_parameter('max_yaw_rate', 0.6)         # rad/s clamp
         self.declare_parameter('mavros_wait_timeout', 10.0)  # seconds to wait for MAVROS
+        self.declare_parameter('mavros_prefix', '/mavros')   # base path for MAVROS topics
 
         self.mode = self.get_parameter('mode').get_parameter_value().string_value
         self.rate_hz = self.get_parameter('rate_hz').get_parameter_value().double_value
@@ -47,6 +48,12 @@ class HoverYawSearch(Node):
         self.tag_frame = self.get_parameter('tag_frame').get_parameter_value().string_value
         self.max_yaw_rate = self.get_parameter('max_yaw_rate').get_parameter_value().double_value
         self.mavros_wait_timeout = self.get_parameter('mavros_wait_timeout').get_parameter_value().double_value
+        # Normalize MAVROS topic prefix (leading slash, no trailing slash)
+        raw_prefix = self.get_parameter('mavros_prefix').get_parameter_value().string_value
+        raw_prefix = raw_prefix if raw_prefix is not None else '/mavros'
+        if not raw_prefix.startswith('/'):
+            raw_prefix = '/' + raw_prefix
+        self.mavros_prefix = raw_prefix.rstrip('/') or ''
 
         # State from MAVROS
         self._state: State | None = None
@@ -54,9 +61,10 @@ class HoverYawSearch(Node):
         self._startup_time = rclpy.clock.Clock().now()
         self._mavros_ready_logged = False
 
+        state_topic = f"{self.mavros_prefix}/state" if self.mavros_prefix else '/mavros/state'
         self._state_sub = self.create_subscription(
             State,
-            '/mavros/state',
+            state_topic,
             self._state_cb,
             10
         )
@@ -69,9 +77,10 @@ class HoverYawSearch(Node):
         )
 
         # Velocity setpoint to FCU
+        vel_topic = f"{self.mavros_prefix}/setpoint_velocity/cmd_vel_unstamped" if self.mavros_prefix else '/mavros/setpoint_velocity/cmd_vel_unstamped'
         self._vel_pub = self.create_publisher(
             Twist,
-            '/mavros/setpoint_velocity/cmd_vel_unstamped',
+            vel_topic,
             10
         )
 

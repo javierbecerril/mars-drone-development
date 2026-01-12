@@ -1,0 +1,1 @@
+/home/javierbecerril/harmonic_ws/build/ardupilot_msgs/rosidl_generator_c/ardupilot_msgs/msg/detail/global_position__struct.h

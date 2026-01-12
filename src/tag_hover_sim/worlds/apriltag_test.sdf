@@ -181,50 +181,12 @@
 
 
 
-    <model name='apriltag_board'>
-      <pose>2 0 1.5 0 0 0</pose>
-      <static>true</static>
-      <link name='board'>
-        <visual name='board_visual'>
-          <geometry>
-            <box>
-              <size>0.5 0.5 0.01</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-        <visual name='apriltag_visual'>
-          <pose>0 0 0.0050000000000000001 0 0 0</pose>
-          <geometry>
-            <box>
-              <size>0.037600000000000001 0.037600000000000001 0.001</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0 0 0 1</ambient>
-            <diffuse>0 0 0 1</diffuse>
-          </material>
-        </visual>
-        <pose>0 0 0 0 0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
-      </link>
-      <self_collide>false</self_collide>
-    </model>
+    <!-- Replace simple black square board with a textured AprilTag model include -->
+    <include>
+      <uri>model://apriltag_36h11_0</uri>
+      <name>apriltag_36h11_0</name>
+      <pose>0 2 1.5 0 1.5708 1.5708</pose>
+    </include>
 
 
 

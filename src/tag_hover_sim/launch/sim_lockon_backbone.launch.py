@@ -20,6 +20,24 @@ def generate_launch_description():
     description='MAVROS FCU URL (sim: UDP to SITL; real: serial:///dev/ttyAMA0:57600)'
   )
 
+  mavros_name_arg = DeclareLaunchArgument(
+    'mavros_name',
+    default_value='mavros_lockon',
+    description='MAVROS node name (use unique value to avoid clashes)'
+  )
+
+  mavros_ns_arg = DeclareLaunchArgument(
+    'mavros_ns',
+    default_value='',
+    description='MAVROS namespace (use unique value to avoid clashes)'
+  )
+
+  mavros_prefix_arg = DeclareLaunchArgument(
+    'mavros_prefix',
+    default_value='/mavros',
+    description='Base topic prefix for MAVROS (e.g., /mavros or /mavros_lockon)'
+  )
+
   mode_arg = DeclareLaunchArgument(
     'mode',
     default_value='SEARCH',
@@ -29,11 +47,15 @@ def generate_launch_description():
   mavros_node = Node(
     package='mavros',
     executable='mavros_node',
-    name='mavros',
+    name=LaunchConfiguration('mavros_name'),
+    namespace=LaunchConfiguration('mavros_ns'),
     output='screen',
     parameters=[
       {'fcu_url': LaunchConfiguration('fcu_url')},
-      {'use_sim_time': True}
+      {'target_system_id': 1},
+      {'target_component_id': 1},
+      {'use_sim_time': True},
+      {'gcs_url': ''},
     ]
   )
 
@@ -52,12 +74,16 @@ def generate_launch_description():
       {'tag_frame': 'tag36h11:0'},         # tag frame name
       {'max_yaw_rate': 0.6},               # max yaw rate (rad/s)
       {'mavros_wait_timeout': 10.0},       # wait up to 10s for MAVROS
+      {'mavros_prefix': LaunchConfiguration('mavros_prefix')},
       {'use_sim_time': True}
     ]
   )
 
   return LaunchDescription([
     fcu_url_arg,
+    mavros_name_arg,
+    mavros_ns_arg,
+    mavros_prefix_arg,
     mode_arg,
     mavros_node,
     hover_yaw_search_node,

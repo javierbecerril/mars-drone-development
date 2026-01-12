@@ -13,3 +13,4 @@ cd ~/harmonic_ws/src/ardupilot/Tools/autotest || exit 1
   --model JSON \
   --console \
   --map
+  --out=127.0.0.1:14550

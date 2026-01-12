@@ -14,6 +14,7 @@ Goal: Single entrypoint for this repo, with pointers into per-project docs.
 ---
 
 ## Repo overview (docs/)
+- `docs/PROGRESS_LOG.md` — Session-by-session work log with dates, summaries, and next todos.
 - `docs/ALL_WORK_SUMMARY.md` — Narrative of recent work and status.
 - `docs/LOCKON_NOTES.md` — AprilTag hover/yaw-search integration notes (Gazebo + ArduPilot SITL).
 - `docs/ardupilot_setup.md` — ArduPilot SITL install + plugin setup for Harmonic.
